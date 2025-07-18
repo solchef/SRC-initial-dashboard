@@ -296,8 +296,8 @@ export function AppSidebar({
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-black dark:bg-white rounded-lg flex items-center justify-center p-1 flex-shrink-0">
-            <img src="/images/src-logo.png" alt="$SRC Logo" className="w-full h-full object-contain" />
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+            <img src="/images/src-logo.svg" alt="$SRC Logo" className="w-full h-full object-contain" />
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <h2 className="font-semibold text-sidebar-foreground">$SRC Ecosystem</h2>
@@ -377,6 +377,51 @@ export function AppSidebar({
                               } else if (item.title === "Apply for Credit Insurance") {
                                 setActivePage("credit-insurance")
                                 onPageChange?.("credit-insurance")
+                              }
+                            }
+                            // Handle trade evaluation section clicks
+                            else if (section.title === "Trade Evaluation") {
+                              if (item.title === "Transaction Risk Assessment") {
+                                setActivePage("transaction-risk-assessment")
+                                onPageChange?.("transaction-risk-assessment")
+                              } else if (item.title === "Due Diligence") {
+                                setActivePage("due-diligence")
+                                onPageChange?.("due-diligence")
+                              } else if (item.title === "Trade History Analyzer") {
+                                setActivePage("trade-history-analyzer")
+                                onPageChange?.("trade-history-analyzer")
+                              } else if (item.title === "Red Flag Detection") {
+                                setActivePage("red-flag-detection")
+                                onPageChange?.("red-flag-detection")
+                              }
+                            }
+                            // Handle digital trade creation section clicks
+                            else if (section.title === "Digital Trade Creation") {
+                              if (item.title === "Create New Trade") {
+                                setActivePage("create-new-trade")
+                                onPageChange?.("create-new-trade")
+                              } else if (item.title === "Input Trade Terms") {
+                                setActivePage("input-trade-terms")
+                                onPageChange?.("input-trade-terms")
+                              } else if (item.title === "Upload Docs & Sign") {
+                                setActivePage("upload-docs-sign")
+                                onPageChange?.("upload-docs-sign")
+                              } else if (item.title === "Generate Smart Contract") {
+                                setActivePage("generate-smart-contract")
+                                onPageChange?.("generate-smart-contract")
+                              }
+                            }
+                            // Handle help & support section clicks
+                            else if (section.title === "Help & Support") {
+                              if (item.title === "Chat Assistant (AI)") {
+                                setActivePage("chat-assistant")
+                                onPageChange?.("chat-assistant")
+                              } else if (item.title === "Legal Resources") {
+                                setActivePage("legal-resources")
+                                onPageChange?.("legal-resources")
+                              } else if (item.title === "Contact Support") {
+                                setActivePage("contact-support")
+                                onPageChange?.("contact-support")
                               }
                             } else {
                               setActivePage(null)

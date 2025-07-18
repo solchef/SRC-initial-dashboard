@@ -23,8 +23,8 @@ export function TopNavigation() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center p-1">
-            <img src="/images/src-logo.png" alt="$SRC Logo" className="w-full h-full object-contain" />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img src="/images/src-logo.svg" alt="$SRC Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-foreground">$SRC Ecosystem</h1>
         </div>
