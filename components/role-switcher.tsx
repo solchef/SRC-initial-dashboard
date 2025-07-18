@@ -1,40 +1,73 @@
 "use client"
 
-import { Building2, Users } from "lucide-react"
+import { useState } from "react"
+import { Check, ChevronsUpDown } from "lucide-react"
+
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useUserRole } from "@/hooks/use-user-role"
 
+const roles = [
+  {
+    value: "importer",
+    label: "Importer",
+  },
+  {
+    value: "exporter",
+    label: "Exporter",
+  },
+  {
+    value: "bank",
+    label: "Bank",
+  },
+  {
+    value: "logistics",
+    label: "Logistics Provider",
+  },
+]
+
 export function RoleSwitcher() {
-  const { userRole, setUserRole } = useUserRole()
+  const [open, setOpen] = useState(false)
+  const { role, setRole } = useUserRole()
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2 bg-transparent border-border hover:bg-accent">
-          {userRole === "sme" ? (
-            <>
-              <Building2 className="h-4 w-4" />
-              <span>SME</span>
-            </>
-          ) : (
-            <>
-              <Users className="h-4 w-4" />
-              <span>Liquidity Provider</span>
-            </>
-          )}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-[200px] justify-between bg-transparent"
+        >
+          {role ? roles.find((r) => r.value === role)?.label : "Select role..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setUserRole("sme")}>
-          <Building2 className="h-4 w-4 mr-2" />
-          SME (Importer/Exporter/Trader)
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setUserRole("liquidity_provider")}>
-          <Users className="h-4 w-4 mr-2" />
-          Liquidity Provider
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search role..." />
+          <CommandList>
+            <CommandEmpty>No role found.</CommandEmpty>
+            <CommandGroup>
+              {roles.map((r) => (
+                <CommandItem
+                  key={r.value}
+                  value={r.value}
+                  onSelect={(currentValue) => {
+                    setRole(currentValue === role ? "" : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", role === r.value ? "opacity-100" : "opacity-0")} />
+                  {r.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }

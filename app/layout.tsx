@@ -2,13 +2,13 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/providers"
+import { Providers } from "@/components/providers"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "$SRC Ecosystem - Trade Finance Platform",
-  description: "Blockchain-based trade finance platform for SMEs and Liquidity Providers",
+  title: "$rc Ecosystem Dashboard",
+  description: "Comprehensive trade finance platform",
     generator: 'v0.dev'
 }
 
@@ -20,9 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
