@@ -39,6 +39,8 @@ import {
   Award,
   Leaf,
 } from "lucide-react"
+import type React from "react"
+
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +55,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useUserRole } from "@/hooks/use-user-role"
+import { useState } from "react"
 
 // SME Menu Structure
 const smeMenuItems = [
@@ -281,9 +284,13 @@ const liquidityProviderMenuItems = [
   },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({
+  onPageChange,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { onPageChange?: (page: string | null) => void }) {
   const { userRole } = useUserRole()
   const menuItems = userRole === "sme" ? smeMenuItems : liquidityProviderMenuItems
+  const [activePage, setActivePage] = useState<string | null>(null)
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -319,7 +326,28 @@ export function AppSidebar() {
                       <SidebarMenuItem key={itemIndex}>
                         <SidebarMenuButton
                           tooltip={item.title}
-                          className="w-full justify-start pl-8 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                          className="w-full justify-start pl-8 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+                          onClick={() => {
+                            // Handle compliance section clicks
+                            if (section.title === "Compliance & Onboarding") {
+                              if (item.title === "KYC, KYB") {
+                                setActivePage("kyc-kyb")
+                                onPageChange?.("kyc-kyb")
+                              } else if (item.title === "Document Upload") {
+                                setActivePage("document-upload")
+                                onPageChange?.("document-upload")
+                              } else if (item.title === "AML Screening") {
+                                setActivePage("aml-screening")
+                                onPageChange?.("aml-screening")
+                              } else if (item.title === "Onboarding Status Tracker") {
+                                setActivePage("onboarding-status")
+                                onPageChange?.("onboarding-status")
+                              }
+                            } else {
+                              setActivePage(null)
+                              onPageChange?.(null)
+                            }
+                          }}
                         >
                           <item.icon className="h-4 w-4 text-primary/80 flex-shrink-0" />
                           <span>{item.title}</span>
