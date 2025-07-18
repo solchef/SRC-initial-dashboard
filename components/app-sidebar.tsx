@@ -328,8 +328,24 @@ export function AppSidebar({
                           tooltip={item.title}
                           className="w-full justify-start pl-8 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
                           onClick={() => {
+                            // Handle dashboard section clicks
+                            if (section.title === "Dashboard") {
+                              if (item.title === "Portfolio Summary") {
+                                setActivePage("portfolio-summary")
+                                onPageChange?.("portfolio-summary")
+                              } else if (item.title === "Trade Pipeline Tracker") {
+                                setActivePage("trade-pipeline-tracker")
+                                onPageChange?.("trade-pipeline-tracker")
+                              } else if (item.title === "Notifications") {
+                                setActivePage("notifications")
+                                onPageChange?.("notifications")
+                              } else if (item.title === "Risk Alerts") {
+                                setActivePage("risk-alerts")
+                                onPageChange?.("risk-alerts")
+                              }
+                            }
                             // Handle compliance section clicks
-                            if (section.title === "Compliance & Onboarding") {
+                            else if (section.title === "Compliance & Onboarding") {
                               if (item.title === "KYC, KYB") {
                                 setActivePage("kyc-kyb")
                                 onPageChange?.("kyc-kyb")
@@ -342,6 +358,25 @@ export function AppSidebar({
                               } else if (item.title === "Onboarding Status Tracker") {
                                 setActivePage("onboarding-status")
                                 onPageChange?.("onboarding-status")
+                              }
+                            }
+                            // Handle credit assessment section clicks
+                            else if (section.title === "Credit Assessment") {
+                              if (item.title === "Credit Profile") {
+                                setActivePage("credit-profile")
+                                onPageChange?.("credit-profile")
+                              } else if (item.title === "Score Report") {
+                                setActivePage("score-report")
+                                onPageChange?.("score-report")
+                              } else if (item.title === "Upload Financials") {
+                                setActivePage("upload-financials")
+                                onPageChange?.("upload-financials")
+                              } else if (item.title === "Creditworthiness History") {
+                                setActivePage("creditworthiness-history")
+                                onPageChange?.("creditworthiness-history")
+                              } else if (item.title === "Apply for Credit Insurance") {
+                                setActivePage("credit-insurance")
+                                onPageChange?.("credit-insurance")
                               }
                             } else {
                               setActivePage(null)

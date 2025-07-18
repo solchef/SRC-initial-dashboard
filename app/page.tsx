@@ -6,6 +6,12 @@ import { TopNavigation } from "@/components/top-navigation"
 import { DashboardContent } from "@/components/dashboard-content"
 import { UserRoleProvider } from "@/hooks/use-user-role"
 import { ComplianceDashboard } from "@/components/compliance/compliance-dashboard"
+import { PortfolioSummaryInterface } from "@/components/dashboard/portfolio-summary"
+import { TradePipelineTrackerInterface } from "@/components/dashboard/trade-pipeline-tracker"
+import { NotificationsInterface } from "@/components/dashboard/notifications-interface"
+import { RiskAlertsInterface } from "@/components/dashboard/risk-alerts"
+import { CreditProfileInterface } from "@/components/credit/credit-profile"
+import { ScoreReportInterface } from "@/components/credit/score-report"
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState<string | null>(null)
@@ -19,7 +25,29 @@ export default function Dashboard() {
             <TopNavigation />
             {currentPage ? (
               <div className="p-6">
-                <ComplianceDashboard activeSection={currentPage} />
+                {currentPage.startsWith("kyc-kyb") ||
+                currentPage.startsWith("document-upload") ||
+                currentPage.startsWith("aml-screening") ||
+                currentPage.startsWith("onboarding-status") ? (
+                  <ComplianceDashboard activeSection={currentPage} />
+                ) : currentPage === "portfolio-summary" ? (
+                  <PortfolioSummaryInterface />
+                ) : currentPage === "trade-pipeline-tracker" ? (
+                  <TradePipelineTrackerInterface />
+                ) : currentPage === "notifications" ? (
+                  <NotificationsInterface />
+                ) : currentPage === "risk-alerts" ? (
+                  <RiskAlertsInterface />
+                ) : currentPage === "credit-profile" ? (
+                  <CreditProfileInterface />
+                ) : currentPage === "score-report" ? (
+                  <ScoreReportInterface />
+                ) : (
+                  <div className="text-center py-8">
+                    <h2 className="text-xl font-semibold mb-2">Feature Coming Soon</h2>
+                    <p className="text-muted-foreground">This feature is currently under development.</p>
+                  </div>
+                )}
               </div>
             ) : (
               <DashboardContent />
