@@ -22,6 +22,9 @@ import { RiskAlertsInterface } from "@/components/dashboard/risk-alerts"
 // Credit Assessment Components
 import { CreditProfileInterface } from "@/components/credit/credit-profile"
 import { ScoreReportInterface } from "@/components/credit/score-report"
+import { UploadFinancialsInterface } from "@/components/credit/upload-financials"
+import { CreditworthinessHistoryInterface } from "@/components/credit/creditworthiness-history"
+import { CreditInsuranceInterface } from "@/components/credit/credit-insurance"
 
 // Trade Evaluation Components
 import { TransactionRiskAssessmentInterface } from "@/components/trade-evaluation/transaction-risk-assessment"
@@ -32,27 +35,13 @@ import { RedFlagDetectionInterface } from "@/components/trade-evaluation/red-fla
 // Digital Trade Creation Components
 import { CreateNewTradeInterface } from "@/components/digital-trade/create-new-trade"
 import { InputTradeTermsInterface } from "@/components/digital-trade/input-trade-terms"
+import { UploadDocsSignInterface } from "@/components/digital-trade/upload-docs-sign"
+import { GenerateSmartContractInterface } from "@/components/digital-trade/generate-smart-contract"
 
 // Help & Support Components
 import { ChatAssistantInterface } from "@/components/help-support/chat-assistant"
 import { LegalResourcesInterface } from "@/components/help-support/legal-resources"
 import { ContactSupportInterface } from "@/components/help-support/contact-support"
-
-// Coming Soon Component
-function ComingSoonInterface({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-          <span className="text-2xl">🚧</span>
-        </div>
-        <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-        <p className="text-muted-foreground max-w-md">{description}</p>
-        <div className="text-sm text-muted-foreground">This feature is coming soon. Stay tuned for updates!</div>
-      </div>
-    </div>
-  )
-}
 
 export default function HomePage() {
   const [currentPage, setCurrentPage] = useState<string | null>(null)
@@ -85,26 +74,11 @@ export default function HomePage() {
       case "score-report":
         return <ScoreReportInterface />
       case "upload-financials":
-        return (
-          <ComingSoonInterface
-            title="Upload Financials"
-            description="Upload and manage your financial documents for credit assessment."
-          />
-        )
+        return <UploadFinancialsInterface />
       case "creditworthiness-history":
-        return (
-          <ComingSoonInterface
-            title="Creditworthiness History"
-            description="View your credit history and track changes over time."
-          />
-        )
+        return <CreditworthinessHistoryInterface />
       case "credit-insurance":
-        return (
-          <ComingSoonInterface
-            title="Apply for Credit Insurance"
-            description="Apply for trade credit insurance to protect your transactions."
-          />
-        )
+        return <CreditInsuranceInterface />
 
       // Trade Evaluation Pages
       case "transaction-risk-assessment":
@@ -122,19 +96,9 @@ export default function HomePage() {
       case "input-trade-terms":
         return <InputTradeTermsInterface />
       case "upload-docs-sign":
-        return (
-          <ComingSoonInterface
-            title="Upload Docs & Sign"
-            description="Upload trade documents and apply digital signatures."
-          />
-        )
+        return <UploadDocsSignInterface />
       case "generate-smart-contract":
-        return (
-          <ComingSoonInterface
-            title="Generate Smart Contract"
-            description="Automatically generate smart contracts for your trades."
-          />
-        )
+        return <GenerateSmartContractInterface />
 
       // Help & Support Pages
       case "chat-assistant":

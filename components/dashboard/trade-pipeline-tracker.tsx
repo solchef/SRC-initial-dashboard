@@ -2,24 +2,26 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckCircle, Clock, AlertTriangle, Eye } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { TrendingUp, Clock, CheckCircle, AlertTriangle, DollarSign, Search, Eye, MoreHorizontal } from "lucide-react"
 
 interface Trade {
   id: string
   counterparty: string
   commodity: string
   value: number
-  stage: string
+  currency: string
+  stage: "initiation" | "documentation" | "financing" | "shipping" | "settlement" | "completed"
   progress: number
-  daysRemaining: number
-  priority: "high" | "medium" | "low"
-  status: "on_track" | "delayed" | "at_risk"
-  nextAction: string
+  startDate: string
+  expectedCompletion: string
+  riskLevel: "low" | "medium" | "high"
+  priority: "low" | "medium" | "high" | "urgent"
 }
 
 const mockTrades: Trade[] = [
@@ -28,270 +30,302 @@ const mockTrades: Trade[] = [
     counterparty: "Global Electronics Ltd",
     commodity: "Semiconductors",
     value: 250000,
-    stage: "Documentation Review",
-    progress: 75,
-    daysRemaining: 5,
+    currency: "USD",
+    stage: "financing",
+    progress: 65,
+    startDate: "2024-01-15",
+    expectedCompletion: "2024-02-28",
+    riskLevel: "low",
     priority: "high",
-    status: "on_track",
-    nextAction: "Await LC confirmation",
   },
   {
     id: "TRD-2024-002",
     counterparty: "Asian Textiles Co",
     commodity: "Cotton Fabric",
     value: 125000,
-    stage: "Financing Approval",
-    progress: 45,
-    daysRemaining: 12,
+    currency: "USD",
+    stage: "documentation",
+    progress: 40,
+    startDate: "2024-01-18",
+    expectedCompletion: "2024-03-15",
+    riskLevel: "medium",
     priority: "medium",
-    status: "delayed",
-    nextAction: "Submit additional documents",
   },
   {
     id: "TRD-2024-003",
     counterparty: "European Machinery",
     commodity: "Industrial Equipment",
-    value: 500000,
-    stage: "Shipment Preparation",
-    progress: 90,
-    daysRemaining: 3,
-    priority: "high",
-    status: "on_track",
-    nextAction: "Schedule inspection",
+    value: 450000,
+    currency: "EUR",
+    stage: "shipping",
+    progress: 85,
+    startDate: "2024-01-10",
+    expectedCompletion: "2024-02-20",
+    riskLevel: "low",
+    priority: "urgent",
   },
   {
     id: "TRD-2024-004",
     counterparty: "Chemical Solutions Inc",
     commodity: "Specialty Chemicals",
     value: 180000,
-    stage: "Risk Assessment",
-    progress: 30,
-    daysRemaining: 18,
+    currency: "USD",
+    stage: "initiation",
+    progress: 15,
+    startDate: "2024-01-20",
+    expectedCompletion: "2024-04-10",
+    riskLevel: "high",
     priority: "low",
-    status: "at_risk",
-    nextAction: "Provide financial statements",
   },
 ]
 
 const stages = [
-  "Initial Inquiry",
-  "Quote Preparation",
-  "Contract Negotiation",
-  "Risk Assessment",
-  "Financing Approval",
-  "Documentation Review",
-  "Shipment Preparation",
-  "In Transit",
-  "Customs Clearance",
-  "Delivery Complete",
+  { id: "initiation", name: "Initiation", color: "bg-blue-100 text-blue-800" },
+  { id: "documentation", name: "Documentation", color: "bg-yellow-100 text-yellow-800" },
+  { id: "financing", name: "Financing", color: "bg-purple-100 text-purple-800" },
+  { id: "shipping", name: "Shipping", color: "bg-orange-100 text-orange-800" },
+  { id: "settlement", name: "Settlement", color: "bg-indigo-100 text-indigo-800" },
+  { id: "completed", name: "Completed", color: "bg-green-100 text-green-800" },
 ]
 
 export function TradePipelineTrackerInterface() {
   const [trades, setTrades] = useState<Trade[]>(mockTrades)
-  const [filterStage, setFilterStage] = useState("all")
-  const [filterStatus, setFilterStatus] = useState("all")
+  const [selectedStage, setSelectedStage] = useState<string>("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("date")
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "on_track":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            On Track
-          </Badge>
-        )
-      case "delayed":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            <Clock className="h-3 w-3 mr-1" />
-            Delayed
-          </Badge>
-        )
-      case "at_risk":
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            At Risk
-          </Badge>
-        )
+  const filteredTrades = trades.filter((trade) => {
+    const matchesStage = selectedStage === "all" || trade.stage === selectedStage
+    const matchesSearch =
+      trade.counterparty.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trade.commodity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trade.id.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesStage && matchesSearch
+  })
+
+  const getStageInfo = (stage: string) => {
+    return stages.find((s) => s.id === stage) || stages[0]
+  }
+
+  const getRiskBadge = (risk: string) => {
+    switch (risk) {
+      case "low":
+        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>
+      case "medium":
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+      case "high":
+        return <Badge className="bg-red-100 text-red-800">High Risk</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{risk}</Badge>
     }
   }
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
+      case "urgent":
+        return <Badge className="bg-red-600 text-white">Urgent</Badge>
       case "high":
-        return <Badge variant="destructive">High</Badge>
+        return <Badge className="bg-red-100 text-red-800">High</Badge>
       case "medium":
-        return <Badge variant="secondary">Medium</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
       case "low":
-        return <Badge variant="outline">Low</Badge>
+        return <Badge className="bg-green-100 text-green-800">Low</Badge>
       default:
         return <Badge variant="outline">{priority}</Badge>
     }
   }
 
-  const filteredTrades = trades.filter((trade) => {
-    const stageMatch = filterStage === "all" || trade.stage === filterStage
-    const statusMatch = filterStatus === "all" || trade.status === filterStatus
-    return stageMatch && statusMatch
-  })
+  const stageStats = stages.map((stage) => ({
+    ...stage,
+    count: trades.filter((trade) => trade.stage === stage.id).length,
+    value: trades.filter((trade) => trade.stage === stage.id).reduce((sum, trade) => sum + trade.value, 0),
+  }))
 
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Trade Pipeline Tracker</h1>
-          <p className="text-muted-foreground">Monitor and manage your active trade transactions</p>
+          <p className="text-muted-foreground">Monitor and manage your trade transactions through each stage</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={filterStage} onValueChange={setFilterStage}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by stage" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              {stages.map((stage) => (
-                <SelectItem key={stage} value={stage}>
-                  {stage}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="on_track">On Track</SelectItem>
-              <SelectItem value="delayed">Delayed</SelectItem>
-              <SelectItem value="at_risk">At Risk</SelectItem>
-            </SelectContent>
-          </Select>
+          <Badge variant="outline">{trades.length} Active Trades</Badge>
+          <Button>
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Trades</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{trades.length}</div>
-            <p className="text-xs text-muted-foreground">Total in pipeline</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">On Track</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {trades.filter((t) => t.status === "on_track").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Proceeding normally</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Delayed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {trades.filter((t) => t.status === "delayed").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Behind schedule</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">At Risk</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{trades.filter((t) => t.status === "at_risk").length}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
-          </CardContent>
-        </Card>
+      {/* Pipeline Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {stageStats.map((stage) => (
+          <Card key={stage.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{stage.count}</div>
+                <div className="text-sm font-medium">{stage.name}</div>
+                <div className="text-xs text-muted-foreground">${(stage.value / 1000).toFixed(0)}K</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Tabs defaultValue="pipeline" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pipeline">Pipeline View</TabsTrigger>
           <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pipeline" className="space-y-4">
-          {filteredTrades.map((trade) => (
-            <Card key={trade.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">{trade.id}</h3>
-                      {getStatusBadge(trade.status)}
-                      {getPriorityBadge(trade.priority)}
+        <TabsContent value="pipeline" className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search trades..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Select value={selectedStage} onValueChange={setSelectedStage}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stages</SelectItem>
+                    {stages.map((stage) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Date</SelectItem>
+                    <SelectItem value="value">Value</SelectItem>
+                    <SelectItem value="progress">Progress</SelectItem>
+                    <SelectItem value="priority">Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trade List */}
+          <div className="space-y-4">
+            {filteredTrades.map((trade) => {
+              const stageInfo = getStageInfo(trade.stage)
+              return (
+                <Card key={trade.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <DollarSign className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{trade.id}</h3>
+                          <p className="text-muted-foreground">{trade.counterparty}</p>
+                          <p className="text-sm text-muted-foreground">{trade.commodity}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={stageInfo.color}>{stageInfo.name}</Badge>
+                        {getRiskBadge(trade.riskLevel)}
+                        {getPriorityBadge(trade.priority)}
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-muted-foreground">{trade.counterparty}</p>
-                    <p className="text-sm">
-                      {trade.commodity} • ${trade.value.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{trade.daysRemaining} days remaining</p>
-                    <p className="text-xs text-muted-foreground">Current: {trade.stage}</p>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Progress</span>
-                    <span className="text-sm font-medium">{trade.progress}%</span>
-                  </div>
-                  <Progress value={trade.progress} className="h-2" />
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Trade Value</p>
+                        <p className="font-semibold">
+                          {trade.value.toLocaleString()} {trade.currency}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Start Date</p>
+                        <p className="font-semibold">{trade.startDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Expected Completion</p>
+                        <p className="font-semibold">{trade.expectedCompletion}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Progress</p>
+                        <div className="flex items-center gap-2">
+                          <Progress value={trade.progress} className="flex-1" />
+                          <span className="text-sm font-medium">{trade.progress}%</span>
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Next Action: {trade.nextAction}</span>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-3 w-3 mr-1" />
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Last updated 2 hours ago</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                        <Button size="sm">Update Status</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
         </TabsContent>
 
         <TabsContent value="kanban" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {stages.slice(0, 5).map((stage) => {
-              const stageTrades = filteredTrades.filter((trade) => trade.stage === stage)
+          <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {stages.map((stage) => {
+              const stageTrades = trades.filter((trade) => trade.stage === stage.id)
               return (
-                <Card key={stage}>
+                <Card key={stage.id} className="min-h-96">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">{stage}</CardTitle>
-                    <Badge variant="outline" className="w-fit">
-                      {stageTrades.length} trades
-                    </Badge>
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span>{stage.name}</span>
+                      <Badge variant="outline">{stageTrades.length}</Badge>
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent className="space-y-3">
                     {stageTrades.map((trade) => (
-                      <div key={trade.id} className="p-3 border rounded-lg bg-muted/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium">{trade.id}</span>
-                          {getPriorityBadge(trade.priority)}
+                      <Card key={trade.id} className="p-3 cursor-pointer hover:shadow-sm transition-shadow">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{trade.id}</span>
+                            {getPriorityBadge(trade.priority)}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{trade.counterparty}</p>
+                          <p className="text-xs text-muted-foreground">{trade.commodity}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">
+                              {trade.value.toLocaleString()} {trade.currency}
+                            </span>
+                            {getRiskBadge(trade.riskLevel)}
+                          </div>
+                          <Progress value={trade.progress} className="h-1" />
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1">{trade.counterparty}</p>
-                        <p className="text-xs">${trade.value.toLocaleString()}</p>
-                        <Progress value={trade.progress} className="h-1 mt-2" />
-                      </div>
+                      </Card>
                     ))}
                   </CardContent>
                 </Card>
@@ -300,40 +334,77 @@ export function TradePipelineTrackerInterface() {
           </div>
         </TabsContent>
 
-        <TabsContent value="timeline" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Completion Time</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">42 days</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600">-5 days</span> from last quarter
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">94.2%</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600">+2.1%</span> improvement
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">$1.2M</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600">+18%</span> from last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Bottlenecks</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">3</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-red-600">Documentation stage</span>
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Trade Timeline</CardTitle>
-              <CardDescription>Chronological view of trade milestones</CardDescription>
+              <CardTitle>Stage Performance</CardTitle>
+              <CardDescription>Average time spent in each stage</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {filteredTrades.map((trade, index) => (
-                  <div key={trade.id} className="relative">
-                    {index < filteredTrades.length - 1 && (
-                      <div className="absolute left-4 top-8 w-0.5 h-16 bg-border"></div>
-                    )}
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <div className="w-3 h-3 bg-primary rounded-full"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium">
-                            {trade.id} - {trade.counterparty}
-                          </h3>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(trade.status)}
-                            <span className="text-sm text-muted-foreground">{trade.daysRemaining} days left</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Currently in: {trade.stage}</p>
-                        <div className="flex items-center gap-4">
-                          <Progress value={trade.progress} className="flex-1 h-2" />
-                          <span className="text-sm font-medium">{trade.progress}%</span>
-                        </div>
-                      </div>
+              <div className="space-y-4">
+                {stages.map((stage) => (
+                  <div key={stage.id} className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{stage.name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {Math.floor(Math.random() * 15) + 5} days avg
+                      </span>
                     </div>
+                    <Progress value={Math.floor(Math.random() * 100)} className="h-2" />
                   </div>
                 ))}
               </div>
