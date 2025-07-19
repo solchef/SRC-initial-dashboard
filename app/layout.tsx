@@ -3,12 +3,13 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
+import { UserRoleProvider } from "@/hooks/use-user-role"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "$rc Ecosystem Dashboard",
-  description: "Comprehensive trade finance platform",
+  title: "$SRC Ecosystem Dashboard",
+  description: "Trade Finance Platform for SMEs and Liquidity Providers",
     generator: 'v0.dev'
 }
 
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <UserRoleProvider>{children}</UserRoleProvider>
+        </Providers>
       </body>
     </html>
   )

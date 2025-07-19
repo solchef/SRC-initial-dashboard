@@ -1,338 +1,346 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TrendingUp, Search, Filter, Eye, Clock, DollarSign, Calendar, MapPin, FileText } from "lucide-react"
+import { CheckCircle, Clock, AlertTriangle, Eye } from "lucide-react"
 
 interface Trade {
   id: string
   counterparty: string
-  amount: number
-  currency: string
-  status: "initiation" | "documentation" | "financing" | "shipment" | "completion"
-  progress: number
-  startDate: string
-  expectedCompletion: string
-  region: string
   commodity: string
-  riskLevel: "low" | "medium" | "high"
-  documents: number
-  totalDocuments: number
+  value: number
+  stage: string
+  progress: number
+  daysRemaining: number
+  priority: "high" | "medium" | "low"
+  status: "on_track" | "delayed" | "at_risk"
+  nextAction: string
 }
 
-export function TradePipelineTrackerInterface() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [regionFilter, setRegionFilter] = useState("all")
+const mockTrades: Trade[] = [
+  {
+    id: "TRD-2024-001",
+    counterparty: "Global Electronics Ltd",
+    commodity: "Semiconductors",
+    value: 250000,
+    stage: "Documentation Review",
+    progress: 75,
+    daysRemaining: 5,
+    priority: "high",
+    status: "on_track",
+    nextAction: "Await LC confirmation",
+  },
+  {
+    id: "TRD-2024-002",
+    counterparty: "Asian Textiles Co",
+    commodity: "Cotton Fabric",
+    value: 125000,
+    stage: "Financing Approval",
+    progress: 45,
+    daysRemaining: 12,
+    priority: "medium",
+    status: "delayed",
+    nextAction: "Submit additional documents",
+  },
+  {
+    id: "TRD-2024-003",
+    counterparty: "European Machinery",
+    commodity: "Industrial Equipment",
+    value: 500000,
+    stage: "Shipment Preparation",
+    progress: 90,
+    daysRemaining: 3,
+    priority: "high",
+    status: "on_track",
+    nextAction: "Schedule inspection",
+  },
+  {
+    id: "TRD-2024-004",
+    counterparty: "Chemical Solutions Inc",
+    commodity: "Specialty Chemicals",
+    value: 180000,
+    stage: "Risk Assessment",
+    progress: 30,
+    daysRemaining: 18,
+    priority: "low",
+    status: "at_risk",
+    nextAction: "Provide financial statements",
+  },
+]
 
-  const [trades] = useState<Trade[]>([
-    {
-      id: "TRD-001",
-      counterparty: "Global Imports Ltd",
-      amount: 125000,
-      currency: "USD",
-      status: "documentation",
-      progress: 75,
-      startDate: "2024-01-10",
-      expectedCompletion: "2024-02-15",
-      region: "Europe",
-      commodity: "Electronics",
-      riskLevel: "low",
-      documents: 8,
-      totalDocuments: 10,
-    },
-    {
-      id: "TRD-002",
-      counterparty: "Asia Trading Co",
-      amount: 89500,
-      currency: "USD",
-      status: "financing",
-      progress: 45,
-      startDate: "2024-01-12",
-      expectedCompletion: "2024-02-20",
-      region: "Asia Pacific",
-      commodity: "Textiles",
-      riskLevel: "medium",
-      documents: 6,
-      totalDocuments: 12,
-    },
-    {
-      id: "TRD-003",
-      counterparty: "Euro Exports",
-      amount: 234000,
-      currency: "EUR",
-      status: "shipment",
-      progress: 90,
-      startDate: "2024-01-05",
-      expectedCompletion: "2024-01-25",
-      region: "Europe",
-      commodity: "Machinery",
-      riskLevel: "low",
-      documents: 15,
-      totalDocuments: 15,
-    },
-    {
-      id: "TRD-004",
-      counterparty: "Pacific Traders",
-      amount: 67800,
-      currency: "USD",
-      status: "initiation",
-      progress: 25,
-      startDate: "2024-01-18",
-      expectedCompletion: "2024-03-01",
-      region: "Asia Pacific",
-      commodity: "Chemicals",
-      riskLevel: "high",
-      documents: 3,
-      totalDocuments: 14,
-    },
-    {
-      id: "TRD-005",
-      counterparty: "American Suppliers",
-      amount: 156000,
-      currency: "USD",
-      status: "completion",
-      progress: 100,
-      startDate: "2023-12-15",
-      expectedCompletion: "2024-01-20",
-      region: "North America",
-      commodity: "Electronics",
-      riskLevel: "low",
-      documents: 12,
-      totalDocuments: 12,
-    },
-  ])
+const stages = [
+  "Initial Inquiry",
+  "Quote Preparation",
+  "Contract Negotiation",
+  "Risk Assessment",
+  "Financing Approval",
+  "Documentation Review",
+  "Shipment Preparation",
+  "In Transit",
+  "Customs Clearance",
+  "Delivery Complete",
+]
+
+export function TradePipelineTrackerInterface() {
+  const [trades, setTrades] = useState<Trade[]>(mockTrades)
+  const [filterStage, setFilterStage] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("all")
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      initiation: { label: "Initiation", className: "bg-blue-100 text-blue-800 border-blue-200" },
-      documentation: { label: "Documentation", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-      financing: { label: "Financing", className: "bg-purple-100 text-purple-800 border-purple-200" },
-      shipment: { label: "Shipment", className: "bg-orange-100 text-orange-800 border-orange-200" },
-      completion: { label: "Completed", className: "bg-green-100 text-green-800 border-green-200" },
+    switch (status) {
+      case "on_track":
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            On Track
+          </Badge>
+        )
+      case "delayed":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">
+            <Clock className="h-3 w-3 mr-1" />
+            Delayed
+          </Badge>
+        )
+      case "at_risk":
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            At Risk
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">{status}</Badge>
     }
-    const config = statusConfig[status as keyof typeof statusConfig]
-    return <Badge className={config.className}>{config.label}</Badge>
   }
 
-  const getRiskBadge = (risk: string) => {
-    const riskConfig = {
-      low: { className: "text-green-600 border-green-200" },
-      medium: { className: "text-yellow-600 border-yellow-200" },
-      high: { className: "text-red-600 border-red-200" },
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return <Badge variant="destructive">High</Badge>
+      case "medium":
+        return <Badge variant="secondary">Medium</Badge>
+      case "low":
+        return <Badge variant="outline">Low</Badge>
+      default:
+        return <Badge variant="outline">{priority}</Badge>
     }
-    const config = riskConfig[risk as keyof typeof riskConfig]
-    return (
-      <Badge variant="outline" className={config.className}>
-        {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk
-      </Badge>
-    )
   }
 
   const filteredTrades = trades.filter((trade) => {
-    const matchesSearch =
-      trade.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trade.id.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || trade.status === statusFilter
-    const matchesRegion = regionFilter === "all" || trade.region === regionFilter
-    return matchesSearch && matchesStatus && matchesRegion
+    const stageMatch = filterStage === "all" || trade.stage === filterStage
+    const statusMatch = filterStatus === "all" || trade.status === filterStatus
+    return stageMatch && statusMatch
   })
 
-  const getStatusStats = () => {
-    return {
-      initiation: trades.filter((t) => t.status === "initiation").length,
-      documentation: trades.filter((t) => t.status === "documentation").length,
-      financing: trades.filter((t) => t.status === "financing").length,
-      shipment: trades.filter((t) => t.status === "shipment").length,
-      completion: trades.filter((t) => t.status === "completion").length,
-    }
-  }
-
-  const stats = getStatusStats()
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Trade Pipeline Tracker</h1>
+          <h1 className="text-3xl font-bold text-foreground">Trade Pipeline Tracker</h1>
           <p className="text-muted-foreground">Monitor and manage your active trade transactions</p>
         </div>
-        <Button>
-          <DollarSign className="h-4 w-4 mr-2" />
-          Create New Trade
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={filterStage} onValueChange={setFilterStage}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by stage" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              {stages.map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {stage}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="on_track">On Track</SelectItem>
+              <SelectItem value="delayed">Delayed</SelectItem>
+              <SelectItem value="at_risk">At Risk</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Status Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.initiation}</div>
-            <p className="text-sm text-muted-foreground">Initiation</p>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Trades</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{trades.length}</div>
+            <p className="text-xs text-muted-foreground">Total in pipeline</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.documentation}</div>
-            <p className="text-sm text-muted-foreground">Documentation</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.financing}</div>
-            <p className="text-sm text-muted-foreground">Financing</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{stats.shipment}</div>
-            <p className="text-sm text-muted-foreground">Shipment</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.completion}</div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-primary" />
-            Filters & Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by trade ID or counterparty..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">On Track</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {trades.filter((t) => t.status === "on_track").length}
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="initiation">Initiation</SelectItem>
-                <SelectItem value="documentation">Documentation</SelectItem>
-                <SelectItem value="financing">Financing</SelectItem>
-                <SelectItem value="shipment">Shipment</SelectItem>
-                <SelectItem value="completion">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by region" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Regions</SelectItem>
-                <SelectItem value="North America">North America</SelectItem>
-                <SelectItem value="Europe">Europe</SelectItem>
-                <SelectItem value="Asia Pacific">Asia Pacific</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground">Proceeding normally</p>
+          </CardContent>
+        </Card>
 
-      {/* Trade List */}
-      <div className="space-y-4">
-        {filteredTrades.map((trade) => (
-          <Card key={trade.id}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Delayed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {trades.filter((t) => t.status === "delayed").length}
+            </div>
+            <p className="text-xs text-muted-foreground">Behind schedule</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">At Risk</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{trades.filter((t) => t.status === "at_risk").length}</div>
+            <p className="text-xs text-muted-foreground">Need attention</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="pipeline" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="pipeline">Pipeline View</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pipeline" className="space-y-4">
+          {filteredTrades.map((trade) => (
+            <Card key={trade.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold">{trade.id}</h3>
                       {getStatusBadge(trade.status)}
-                      {getRiskBadge(trade.riskLevel)}
+                      {getPriorityBadge(trade.priority)}
                     </div>
-                    <p className="text-sm text-muted-foreground">{trade.counterparty}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-semibold">
-                    {trade.amount.toLocaleString()} {trade.currency}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{trade.commodity}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Start Date</p>
-                    <p className="text-sm font-medium">{trade.startDate}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Expected Completion</p>
-                    <p className="text-sm font-medium">{trade.expectedCompletion}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Region</p>
-                    <p className="text-sm font-medium">{trade.region}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Documents</p>
-                    <p className="text-sm font-medium">
-                      {trade.documents}/{trade.totalDocuments}
+                    <p className="text-muted-foreground">{trade.counterparty}</p>
+                    <p className="text-sm">
+                      {trade.commodity} • ${trade.value.toLocaleString()}
                     </p>
                   </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{trade.daysRemaining} days remaining</p>
+                    <p className="text-xs text-muted-foreground">Current: {trade.stage}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex-1 mr-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">Progress</span>
-                    <span className="text-sm text-muted-foreground">{trade.progress}%</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Progress</span>
+                    <span className="text-sm font-medium">{trade.progress}%</span>
                   </div>
                   <Progress value={trade.progress} className="h-2" />
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Next Action: {trade.nextAction}</span>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-3 w-3 mr-1" />
+                      View Details
+                    </Button>
+                  </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="kanban" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {stages.slice(0, 5).map((stage) => {
+              const stageTrades = filteredTrades.filter((trade) => trade.stage === stage)
+              return (
+                <Card key={stage}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">{stage}</CardTitle>
+                    <Badge variant="outline" className="w-fit">
+                      {stageTrades.length} trades
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {stageTrades.map((trade) => (
+                      <div key={trade.id} className="p-3 border rounded-lg bg-muted/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium">{trade.id}</span>
+                          {getPriorityBadge(trade.priority)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">{trade.counterparty}</p>
+                        <p className="text-xs">${trade.value.toLocaleString()}</p>
+                        <Progress value={trade.progress} className="h-1 mt-2" />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Trade Timeline</CardTitle>
+              <CardDescription>Chronological view of trade milestones</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {filteredTrades.map((trade, index) => (
+                  <div key={trade.id} className="relative">
+                    {index < filteredTrades.length - 1 && (
+                      <div className="absolute left-4 top-8 w-0.5 h-16 bg-border"></div>
+                    )}
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-3 h-3 bg-primary rounded-full"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium">
+                            {trade.id} - {trade.counterparty}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(trade.status)}
+                            <span className="text-sm text-muted-foreground">{trade.daysRemaining} days left</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">Currently in: {trade.stage}</p>
+                        <div className="flex items-center gap-4">
+                          <Progress value={trade.progress} className="flex-1 h-2" />
+                          <span className="text-sm font-medium">{trade.progress}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {filteredTrades.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No trades found</h3>
-            <p className="text-muted-foreground">Try adjusting your search criteria or create a new trade.</p>
-          </CardContent>
-        </Card>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

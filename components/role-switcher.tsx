@@ -1,36 +1,27 @@
 "use client"
 
-import { useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useUserRole } from "@/hooks/use-user-role"
+import { useState } from "react"
 
 const roles = [
   {
-    value: "importer",
-    label: "Importer",
+    value: "sme",
+    label: "SME (Small & Medium Enterprise)",
   },
   {
-    value: "exporter",
-    label: "Exporter",
-  },
-  {
-    value: "bank",
-    label: "Bank",
-  },
-  {
-    value: "logistics",
-    label: "Logistics Provider",
+    value: "liquidity_provider",
+    label: "Liquidity Provider",
   },
 ]
 
 export function RoleSwitcher() {
+  const { userRole, setUserRole } = useUserRole()
   const [open, setOpen] = useState(false)
-  const { role, setRole } = useUserRole()
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,7 +32,7 @@ export function RoleSwitcher() {
           aria-expanded={open}
           className="w-[200px] justify-between bg-transparent"
         >
-          {role ? roles.find((r) => r.value === role)?.label : "Select role..."}
+          {roles.find((role) => role.value === userRole)?.label}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -51,17 +42,17 @@ export function RoleSwitcher() {
           <CommandList>
             <CommandEmpty>No role found.</CommandEmpty>
             <CommandGroup>
-              {roles.map((r) => (
+              {roles.map((role) => (
                 <CommandItem
-                  key={r.value}
-                  value={r.value}
+                  key={role.value}
+                  value={role.value}
                   onSelect={(currentValue) => {
-                    setRole(currentValue === role ? "" : currentValue)
+                    setUserRole(currentValue as "sme" | "liquidity_provider")
                     setOpen(false)
                   }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", role === r.value ? "opacity-100" : "opacity-0")} />
-                  {r.label}
+                  <Check className={cn("mr-2 h-4 w-4", userRole === role.value ? "opacity-100" : "opacity-0")} />
+                  {role.label}
                 </CommandItem>
               ))}
             </CommandGroup>

@@ -3,518 +3,370 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Search,
-  Shield,
-  User,
-  Building,
-  FileText,
-  Eye,
-  RefreshCw,
-  X,
-  Info,
-} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import { AlertTriangle, CheckCircle, Search, Shield, Eye, RefreshCw } from "lucide-react"
 
-interface AMLCheck {
+interface ScreeningResult {
   id: string
-  type: "individual" | "entity"
-  name: string
-  status: "clear" | "flagged" | "pending" | "requires_review"
+  entity: string
+  type: "individual" | "business"
   riskLevel: "low" | "medium" | "high"
-  lastChecked: string
-  sources: string[]
-  findings?: AMLFinding[]
+  matches: number
+  lastScreened: string
+  status: "clear" | "flagged" | "under_review"
 }
 
-interface AMLFinding {
-  id: string
-  type: "sanctions" | "pep" | "adverse_media" | "watchlist"
-  severity: "low" | "medium" | "high"
-  description: string
-  source: string
-  date: string
-  resolved: boolean
-}
+const mockScreeningResults: ScreeningResult[] = [
+  {
+    id: "1",
+    entity: "John Smith",
+    type: "individual",
+    riskLevel: "low",
+    matches: 0,
+    lastScreened: "2024-01-16",
+    status: "clear",
+  },
+  {
+    id: "2",
+    entity: "Global Trading Corp",
+    type: "business",
+    riskLevel: "medium",
+    matches: 2,
+    lastScreened: "2024-01-15",
+    status: "under_review",
+  },
+  {
+    id: "3",
+    entity: "Ahmed Hassan",
+    type: "individual",
+    riskLevel: "high",
+    matches: 5,
+    lastScreened: "2024-01-14",
+    status: "flagged",
+  },
+]
 
 export function AMLScreeningInterface() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [screeningResults, setScreeningResults] = useState<ScreeningResult[]>(mockScreeningResults)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isScreening, setIsScreening] = useState(false)
 
-  const [amlChecks, setAmlChecks] = useState<AMLCheck[]>([
-    {
-      id: "1",
-      type: "individual",
-      name: "John Doe",
-      status: "clear",
-      riskLevel: "low",
-      lastChecked: "2024-01-18",
-      sources: ["OFAC", "UN Sanctions", "EU Sanctions", "PEP Lists"],
-    },
-    {
-      id: "2",
-      type: "entity",
-      name: "TechCorp Imports Ltd",
-      status: "clear",
-      riskLevel: "low",
-      lastChecked: "2024-01-18",
-      sources: ["OFAC", "UN Sanctions", "EU Sanctions", "Corporate Watchlists"],
-    },
-    {
-      id: "3",
-      type: "individual",
-      name: "Jane Smith",
-      status: "flagged",
-      riskLevel: "medium",
-      lastChecked: "2024-01-17",
-      sources: ["OFAC", "UN Sanctions", "EU Sanctions", "PEP Lists"],
-      findings: [
-        {
-          id: "f1",
-          type: "pep",
-          severity: "medium",
-          description: "Listed as Politically Exposed Person - Former government official",
-          source: "PEP Database",
-          date: "2024-01-17",
-          resolved: false,
-        },
-      ],
-    },
-    {
-      id: "4",
-      type: "entity",
-      name: "Global Trading Partners",
-      status: "requires_review",
-      riskLevel: "high",
-      lastChecked: "2024-01-16",
-      sources: ["OFAC", "UN Sanctions", "EU Sanctions", "Corporate Watchlists"],
-      findings: [
-        {
-          id: "f2",
-          type: "adverse_media",
-          severity: "high",
-          description: "Negative media coverage regarding compliance violations",
-          source: "Media Monitoring",
-          date: "2024-01-15",
-          resolved: false,
-        },
-        {
-          id: "f3",
-          type: "sanctions",
-          severity: "high",
-          description: "Entity appears on restricted parties list",
-          source: "OFAC SDN List",
-          date: "2024-01-16",
-          resolved: false,
-        },
-      ],
-    },
-  ])
+  const getRiskBadge = (level: string) => {
+    switch (level) {
+      case "low":
+        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>
+      case "medium":
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+      case "high":
+        return <Badge className="bg-red-100 text-red-800">High Risk</Badge>
+      default:
+        return <Badge variant="outline">{level}</Badge>
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "clear":
         return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
+          <Badge className="bg-green-100 text-green-800">
             <CheckCircle className="h-3 w-3 mr-1" />
             Clear
           </Badge>
         )
       case "flagged":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge className="bg-red-100 text-red-800">
             <AlertTriangle className="h-3 w-3 mr-1" />
             Flagged
           </Badge>
         )
-      case "requires_review":
+      case "under_review":
         return (
-          <Badge className="bg-red-100 text-red-800 border-red-200">
-            <X className="h-3 w-3 mr-1" />
-            Requires Review
+          <Badge className="bg-yellow-100 text-yellow-800">
+            <Eye className="h-3 w-3 mr-1" />
+            Under Review
           </Badge>
         )
       default:
-        return (
-          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        )
+        return <Badge variant="outline">{status}</Badge>
     }
   }
 
-  const getRiskBadge = (risk: string) => {
-    switch (risk) {
-      case "low":
-        return (
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            Low Risk
-          </Badge>
-        )
-      case "medium":
-        return (
-          <Badge variant="outline" className="text-yellow-600 border-yellow-200">
-            Medium Risk
-          </Badge>
-        )
-      case "high":
-        return (
-          <Badge variant="outline" className="text-red-600 border-red-200">
-            High Risk
-          </Badge>
-        )
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
-  const getFindingIcon = (type: string) => {
-    switch (type) {
-      case "sanctions":
-        return <Shield className="h-4 w-4 text-red-500" />
-      case "pep":
-        return <User className="h-4 w-4 text-yellow-500" />
-      case "adverse_media":
-        return <FileText className="h-4 w-4 text-orange-500" />
-      case "watchlist":
-        return <Eye className="h-4 w-4 text-blue-500" />
-      default:
-        return <Info className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  const runNewScreening = () => {
-    // Simulate running a new screening
-    console.log("Running new AML screening...")
-  }
-
-  const overallRiskScore = () => {
-    const highRisk = amlChecks.filter((c) => c.riskLevel === "high").length
-    const mediumRisk = amlChecks.filter((c) => c.riskLevel === "medium").length
-    const lowRisk = amlChecks.filter((c) => c.riskLevel === "low").length
-
-    if (highRisk > 0) return "high"
-    if (mediumRisk > 0) return "medium"
-    return "low"
+  const handleScreening = () => {
+    setIsScreening(true)
+    // Simulate screening process
+    setTimeout(() => {
+      setIsScreening(false)
+    }, 3000)
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AML Screening</h1>
-          <p className="text-muted-foreground">Anti-Money Laundering compliance monitoring</p>
+          <h1 className="text-3xl font-bold text-foreground">AML Screening</h1>
+          <p className="text-muted-foreground">Anti-Money Laundering compliance screening</p>
         </div>
         <div className="flex items-center gap-2">
-          {getRiskBadge(overallRiskScore())}
-          <Button onClick={runNewScreening}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Run New Screening
-          </Button>
+          <Badge variant="outline" className="bg-blue-50">
+            <Shield className="h-3 w-3 mr-1" />
+            Compliance Active
+          </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{amlChecks.filter((c) => c.status === "clear").length}</p>
-                <p className="text-sm text-muted-foreground">Clear</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">{amlChecks.filter((c) => c.status === "flagged").length}</p>
-                <p className="text-sm text-muted-foreground">Flagged</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <X className="h-5 w-5 text-red-500" />
-              <div>
-                <p className="text-2xl font-bold">{amlChecks.filter((c) => c.status === "requires_review").length}</p>
-                <p className="text-sm text-muted-foreground">Requires Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{amlChecks.filter((c) => c.status === "pending").length}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="screening" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="individuals">Individuals</TabsTrigger>
-          <TabsTrigger value="entities">Entities</TabsTrigger>
-          <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="screening">New Screening</TabsTrigger>
+          <TabsTrigger value="results">Screening Results</TabsTrigger>
+          <TabsTrigger value="watchlists">Watchlists</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="screening" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-primary" />
+                  Individual Screening
+                </CardTitle>
+                <CardDescription>Screen individuals against global watchlists</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input id="firstName" placeholder="Enter first name" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input id="lastName" placeholder="Enter last name" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input id="dateOfBirth" type="date" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nationality">Nationality</Label>
+                  <Input id="nationality" placeholder="Enter nationality" />
+                </div>
+                <Button className="w-full" onClick={handleScreening} disabled={isScreening}>
+                  {isScreening ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Screening...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Start Individual Screening
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-primary" />
+                  Business Screening
+                </CardTitle>
+                <CardDescription>Screen businesses and organizations</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company Name *</Label>
+                  <Input id="companyName" placeholder="Enter company name" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="registrationNumber">Registration Number</Label>
+                  <Input id="registrationNumber" placeholder="Enter registration number" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country of Incorporation</Label>
+                  <Input id="country" placeholder="Enter country" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input id="industry" placeholder="Enter industry" />
+                </div>
+                <Button className="w-full" onClick={handleScreening} disabled={isScreening}>
+                  {isScreening ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Screening...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Start Business Screening
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isScreening && (
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
+                  <h3 className="text-lg font-medium">Screening in Progress</h3>
+                  <p className="text-muted-foreground">
+                    Checking against global sanctions lists, PEP databases, and adverse media...
+                  </p>
+                  <Progress value={66} className="w-full max-w-md mx-auto" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="results" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Screening Summary
-              </CardTitle>
-              <CardDescription>Overall AML compliance status</CardDescription>
+              <CardTitle>Recent Screening Results</CardTitle>
+              <CardDescription>View and manage screening results</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span>Compliance Score</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={75} className="w-32" />
-                    <span className="text-sm font-medium">75%</span>
-                  </div>
+                <div className="flex items-center gap-4">
+                  <Input
+                    placeholder="Search results..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                  <Button variant="outline">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Last Full Screening</Label>
-                    <p className="text-sm text-muted-foreground">January 18, 2024</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Next Scheduled Screening</Label>
-                    <p className="text-sm text-muted-foreground">February 18, 2024</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Sources Checked</Label>
-                    <p className="text-sm text-muted-foreground">OFAC, UN, EU, PEP Lists, Watchlists</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Active Findings</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {amlChecks.reduce((acc, check) => acc + (check.findings?.length || 0), 0)} findings require
-                      attention
-                    </p>
-                  </div>
+
+                <div className="space-y-3">
+                  {screeningResults.map((result) => (
+                    <div key={result.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          {result.type === "individual" ? "👤" : "🏢"}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{result.entity}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {result.type === "individual" ? "Individual" : "Business"} • Last screened:{" "}
+                            {result.lastScreened}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getRiskBadge(result.riskLevel)}
+                        {getStatusBadge(result.status)}
+                        <Badge variant="outline">{result.matches} matches</Badge>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-3 w-3 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
+        <TabsContent value="watchlists" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { name: "OFAC SDN List", status: "active", lastUpdate: "2024-01-16", entries: "12,456" },
+              { name: "UN Sanctions List", status: "active", lastUpdate: "2024-01-15", entries: "8,234" },
+              { name: "EU Sanctions List", status: "active", lastUpdate: "2024-01-14", entries: "5,678" },
+              { name: "PEP Database", status: "active", lastUpdate: "2024-01-13", entries: "45,123" },
+              { name: "Adverse Media", status: "active", lastUpdate: "2024-01-16", entries: "234,567" },
+              { name: "Internal Watchlist", status: "active", lastUpdate: "2024-01-16", entries: "89" },
+            ].map((watchlist, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{watchlist.name}</CardTitle>
+                  <CardDescription>
+                    <Badge className="bg-green-100 text-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      {watchlist.status}
+                    </Badge>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Entries:</span>
+                      <span className="font-medium">{watchlist.entries}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Last Update:</span>
+                      <span className="font-medium">{watchlist.lastUpdate}</span>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full mt-4 bg-transparent">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Update List
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>Compliance Reports</CardTitle>
+              <CardDescription>Generate and download compliance reports</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">High-risk entity flagged</p>
-                    <p className="text-xs text-muted-foreground">
-                      Global Trading Partners - Multiple sanctions findings
-                    </p>
-                    <p className="text-xs text-muted-foreground">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">PEP status identified</p>
-                    <p className="text-xs text-muted-foreground">Jane Smith - Former government official</p>
-                    <p className="text-xs text-muted-foreground">1 day ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">Screening completed</p>
-                    <p className="text-xs text-muted-foreground">John Doe - No adverse findings</p>
-                    <p className="text-xs text-muted-foreground">1 day ago</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="individuals" className="space-y-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search individuals..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button>
-              <User className="h-4 w-4 mr-2" />
-              Add Individual
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {amlChecks
-              .filter((check) => check.type === "individual")
-              .map((check) => (
-                <Card key={check.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{check.name}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Last checked: {check.lastChecked}</span>
-                            <span>{check.sources.length} sources</span>
-                            {check.findings && <span>{check.findings.length} findings</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getRiskBadge(check.riskLevel)}
-                        {getStatusBadge(check.status)}
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Available Reports</h3>
+                  {[
+                    "Monthly Screening Summary",
+                    "High-Risk Entities Report",
+                    "Watchlist Match Report",
+                    "Compliance Audit Trail",
+                    "False Positive Analysis",
+                  ].map((report, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <span className="text-sm">{report}</span>
+                      <Button variant="outline" size="sm">
+                        Generate
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="entities" className="space-y-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search entities..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button>
-              <Building className="h-4 w-4 mr-2" />
-              Add Entity
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {amlChecks
-              .filter((check) => check.type === "entity")
-              .map((check) => (
-                <Card key={check.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <Building className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{check.name}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Last checked: {check.lastChecked}</span>
-                            <span>{check.sources.length} sources</span>
-                            {check.findings && <span>{check.findings.length} findings</span>}
-                          </div>
-                        </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-medium">Recent Reports</h3>
+                  {[
+                    { name: "January_2024_Screening_Report.pdf", date: "2024-01-16", size: "2.4 MB" },
+                    { name: "High_Risk_Entities_Q4_2023.pdf", date: "2024-01-01", size: "1.8 MB" },
+                    { name: "Compliance_Audit_December.pdf", date: "2023-12-31", size: "3.2 MB" },
+                  ].map((report, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">{report.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {report.date} • {report.size}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getRiskBadge(check.riskLevel)}
-                        {getStatusBadge(check.status)}
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button variant="outline" size="sm">
+                        Download
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="findings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-primary" />
-                Active Findings
-              </CardTitle>
-              <CardDescription>Issues requiring review and resolution</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {amlChecks.flatMap(
-                  (check) =>
-                    check.findings?.map((finding) => (
-                      <div key={finding.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            {getFindingIcon(finding.type)}
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium">{check.name}</p>
-                                <Badge variant="outline" className="text-xs">
-                                  {finding.type.replace("_", " ").toUpperCase()}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${
-                                    finding.severity === "high"
-                                      ? "text-red-600 border-red-200"
-                                      : finding.severity === "medium"
-                                        ? "text-yellow-600 border-yellow-200"
-                                        : "text-green-600 border-green-200"
-                                  }`}
-                                >
-                                  {finding.severity} severity
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-2">{finding.description}</p>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span>Source: {finding.source}</span>
-                                <span>Date: {finding.date}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
-                              Review
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              Resolve
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )) || [],
-                )}
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
